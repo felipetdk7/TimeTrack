@@ -178,6 +178,47 @@ const ensureCleanWorkspace = () => {
   localStorage.setItem('tt_clean_workspace_v1', 'true');
 };
 
+export const DEMO_MODE_KEY = 'tt_demo_mode';
+const DEMO_USER: User = {
+  id: 'demo-admin',
+  name: 'Demo Manager',
+  email: 'demo@timetrack.local',
+  role: 'Admin',
+};
+const DEMO_TEAMMATE: User = {
+  id: 'demo-employee',
+  name: 'Ana Gómez',
+  email: 'ana@timetrack.local',
+  role: 'Employee',
+};
+
+const buildDemoSeed = () => {
+  const week = getBogotaWeekDates();
+  const projects: Project[] = [
+    { id: 'demo-proj-1', name: 'Rediseño Web', client: 'The Ideas Factory', color: 'emerald', active: true },
+    { id: 'demo-proj-2', name: 'App Móvil', client: 'Cliente Demo', color: 'sky', active: true },
+    { id: 'demo-proj-3', name: 'Marketing Q4', client: 'Interno', color: 'amber', active: true },
+  ];
+  const tasks: Task[] = [
+    { id: 'demo-task-1', projectId: 'demo-proj-1', name: 'Wireframes home', description: 'Bocetos de la página principal.', estimatedHours: 6, assignedTo: DEMO_USER.id, status: 'In progress' },
+    { id: 'demo-task-2', projectId: 'demo-proj-1', name: 'Componentes UI', description: 'Librería de componentes reutilizables.', estimatedHours: 8, assignedTo: DEMO_USER.id, status: 'To do' },
+    { id: 'demo-task-3', projectId: 'demo-proj-2', name: 'Login OAuth', description: 'Autenticación con Google.', estimatedHours: 5, assignedTo: DEMO_TEAMMATE.id, status: 'Done' },
+    { id: 'demo-task-4', projectId: 'demo-proj-2', name: 'Pantalla perfil', description: 'Datos y preferencias del usuario.', estimatedHours: 4, assignedTo: DEMO_TEAMMATE.id, status: 'In progress' },
+    { id: 'demo-task-5', projectId: 'demo-proj-3', name: 'Landing campaña', description: 'Landing de la campaña de fin de año.', estimatedHours: 10, assignedTo: DEMO_USER.id, status: 'To do' },
+  ];
+  const entries: TimeEntry[] = [
+    { id: 'demo-entry-1', userId: DEMO_USER.id, projectId: 'demo-proj-1', taskId: 'demo-task-1', date: week[0], startTime: '09:00', endTime: '12:00', durationMinutes: 180, note: 'Avance de wireframes', source: 'timer' },
+    { id: 'demo-entry-2', userId: DEMO_USER.id, projectId: 'demo-proj-1', taskId: 'demo-task-2', date: week[0], startTime: '14:00', endTime: '16:30', durationMinutes: 150, note: 'Componentes base', source: 'manual' },
+    { id: 'demo-entry-3', userId: DEMO_TEAMMATE.id, projectId: 'demo-proj-2', taskId: 'demo-task-3', date: week[1], startTime: '08:30', endTime: '11:00', durationMinutes: 150, note: 'OAuth listo', source: 'timer' },
+    { id: 'demo-entry-4', userId: DEMO_USER.id, projectId: 'demo-proj-3', taskId: 'demo-task-5', date: week[1], startTime: '13:00', endTime: '15:00', durationMinutes: 120, note: 'Copy de campaña', source: 'manual' },
+  ];
+  const calendarEvents: CalendarEvent[] = [
+    { id: 'demo-cal-1', title: '[Rediseño Web] Wireframes home', startTime: '10:00', endTime: '11:30', date: week[2], matchedProjectId: 'demo-proj-1', matchedTaskId: 'demo-task-1', status: 'pending' },
+    { id: 'demo-cal-2', title: '[App Móvil] Pantalla perfil', startTime: '15:00', endTime: '16:00', date: week[3], matchedProjectId: 'demo-proj-2', matchedTaskId: 'demo-task-4', status: 'pending' },
+  ];
+  return { users: [DEMO_USER, DEMO_TEAMMATE], projects, tasks, entries, calendarEvents };
+};
+
 export const useTimeTrackStore = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -206,6 +247,11 @@ export const useTimeTrackStore = () => {
     setTimer(getLocalStorageItem('tt_timer', { taskId: null, startTime: null }));
     setIsCalendarConnected(getLocalStorageItem('tt_is_calendar_connected', true));
     setLastCalendarSync(localStorage.getItem('tt_last_calendar_sync'));
+
+    if (localStorage.getItem(DEMO_MODE_KEY) === 'true') {
+      const demoUser = getLocalStorageItem<User | null>('tt_active_user', null);
+      if (demoUser) setActiveUser(demoUser);
+    }
   }, []);
 
   const saveUsers = (newUsers: User[]) => {
@@ -331,8 +377,24 @@ export const useTimeTrackStore = () => {
   const clearAuthenticatedUser = useCallback(() => {
     setActiveUser(null);
     localStorage.removeItem('tt_active_user');
+    localStorage.removeItem(DEMO_MODE_KEY);
     setTimer({ taskId: null, startTime: null });
     localStorage.removeItem('tt_timer');
+  }, []);
+
+  // Enter a self-contained demo without Firebase/Google (for stakeholder previews).
+  const enterDemoMode = useCallback(() => {
+    const seed = buildDemoSeed();
+    saveUsers(seed.users);
+    saveProjects(seed.projects);
+    saveTasks(seed.tasks);
+    saveEntries(seed.entries);
+    saveCalendarEvents(seed.calendarEvents);
+    saveDiscardedCalIds([]);
+    saveSettings({ lockDays: 5, companyDomain: '' });
+    setActiveUser(DEMO_USER);
+    setLocalStorageItem('tt_active_user', DEMO_USER);
+    localStorage.setItem(DEMO_MODE_KEY, 'true');
   }, []);
 
   const addTeamMember = (
@@ -1090,6 +1152,7 @@ export const useTimeTrackStore = () => {
     isEntryLocked,
     upsertAuthenticatedUser,
     clearAuthenticatedUser,
+    enterDemoMode,
     addTeamMember,
     updateUserRole,
     removeTeamMember,

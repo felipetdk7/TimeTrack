@@ -44,7 +44,7 @@ Diseñada para equipos que necesitan visibilidad transparente de horas trabajada
 
 ### Prerrequisitos
 - Node.js 18+ o 20+
-- npm o bun
+- npm
 
 ### Instalación y Ejecución
 
@@ -56,7 +56,7 @@ Diseñada para equipos que necesitan visibilidad transparente de horas trabajada
 
 2. **Instalar dependencias:**
    ```bash
-   npm install
+   npm install --legacy-peer-deps
    ```
 
 3. **Ejecutar en modo de desarrollo:**
@@ -84,4 +84,4 @@ Si estás abriendo este repositorio utilizando un agente de desarrollo o harness
 
 ## 📄 Licencia
 
-Este proyecto se distribuye bajo la licencia Apache-2.0.
+Este proyecto se distribuye bajo la licencia MIT. Ver [LICENSE](./LICENSE).

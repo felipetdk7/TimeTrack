@@ -1,0 +1,44 @@
+---
+description: Contexto y reglas de TimeTrack (SPA React + Firebase + Google Workspace)
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# TimeTrack — Reglas para Cursor
+
+App de control de tiempo y tareas para equipos Google Workspace.
+SPA 100% cliente: React 19 + TypeScript + Vite 8 + Tailwind v4. Firebase Auth (Google OAuth),
+Google Calendar API v3 y Sheets API v4. Persistencia en `localStorage`. Sin backend.
+
+Lee `PROJECT.md` (especificación completa) y `AGENTS.md` (comandos). Este archivo resume lo crítico.
+
+## Comandos
+- Instalar: `npm install --legacy-peer-deps` (hay conflicto de peer deps con esbuild)
+- Dev: `npm run dev` → http://localhost:3000
+- Tipos: `npm run lint`
+- Build: `npm run build` → `dist/`
+
+## Invariantes (no romper)
+1. **Zona horaria**: siempre `America/Bogota` (GMT-5). Usa `getBogotaDateString()`, `getBogotaTimeString()`,
+   `getBogotaWeekDates()` del store. Nunca `toISOString().split('T')[0]` ni fechas locales del navegador.
+2. **Token OAuth**: solo en memoria (`cachedAccessToken`). Nunca en `localStorage`, cookies ni logs.
+   401/403 de Google → lanzar `GoogleAuthExpiredError` y permitir reconectar con `googleSignIn()`.
+3. **Medición universal**: toda tarea del Kanban y de "Mi Semana" tiene botón Medir/Detener.
+   Solo un temporizador activo por sistema.
+4. **Calendar**: patrón `[Proyecto] Tarea` (case-insensitive). Nunca crear `TimeEntry` automáticamente;
+   siempre requiere confirmación del usuario.
+5. **Sheets**: nunca hardcodear `"Sheet1"`; lee el título real de `sheets[0].properties.title`.
+   Normaliza encabezados sin tildes ni mayúsculas al importar.
+6. **Sin diálogos nativos**: prohibido `window.alert/confirm/prompt` y `window.location.reload()`.
+   Usa `Toast` y `ConfirmDialog`.
+7. **Validaciones de tiempo**: duración > 0 y sin solapamiento por usuario/fecha. Registros con más de
+   `settings.lockDays` días bloqueados salvo Admin.
+
+## Arquitectura
+- `src/data/store.ts`: fuente de verdad (`useTimeTrackStore`), tipos y reglas de negocio.
+- `src/services/googleAuth.ts`: Firebase Auth y token en memoria.
+- `src/services/googleWorkspace.ts`: clientes REST de Calendar y Sheets.
+- `src/App.tsx`: vistas (week, projects, tasks, entries, calendar, reports, settings), modales y UI.
+
+## Antes de cerrar un cambio
+Ejecuta `npm run lint` y `npm run build` sin errores. No agregues backend ni dependencias sin acordarlo.

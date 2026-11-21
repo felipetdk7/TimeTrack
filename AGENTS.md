@@ -2,8 +2,15 @@
 
 Welcome to **TimeTrack**. This file provides quick instructions and operating rules for AI coding agents and harness runners. For the full system specification, see [PROJECT.md](./PROJECT.md).
 
+## Spec-first
+
+1. Find the task spec under `docs/specs/` (see [docs/specs/README.md](./docs/specs/README.md)) or draft one from [docs/specs/000-template.md](./docs/specs/000-template.md).
+2. Do **not** change product behavior without updating the relevant spec (status + AC).
+3. PRs must link the spec and check invariants (see [.github/pull_request_template.md](./.github/pull_request_template.md)).
+4. Paradigm summary: [docs/spec-driven-development.md](./docs/spec-driven-development.md). Roadmap: [docs/roadmap.md](./docs/roadmap.md).
+
 ## Quick Commands
-- **Install dependencies:** `npm install`
+- **Install dependencies:** `npm install --legacy-peer-deps`
 - **Typecheck & Lint:** `npm run lint` (`tsc --noEmit`)
 - **Build Production:** `npm run build`
 - **Development Server:** `npm run dev` (Port 3000, host `0.0.0.0`)

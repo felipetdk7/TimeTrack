@@ -149,6 +149,7 @@ export default function App() {
     isEntryLocked,
     upsertAuthenticatedUser,
     clearAuthenticatedUser,
+    enterDemoMode,
     addTeamMember,
     updateUserRole,
     removeTeamMember,
@@ -320,6 +321,8 @@ export default function App() {
           setAuthError(null);
           setAccessToken(token);
         }
+      } else if (localStorage.getItem('tt_demo_mode') === 'true') {
+        setAccessToken(null);
       } else {
         setAccessToken(null);
         clearAuthenticatedUser();
@@ -1399,6 +1402,18 @@ export default function App() {
               </div>
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              enterDemoMode();
+              setAuthError(null);
+              showToast('info', 'Modo demo activo: datos de ejemplo, sin Google.');
+            }}
+            className="w-full border border-slate-200 rounded-lg py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            Entrar en modo demo (sin Google)
+          </button>
 
           <p className="text-[11px] text-slate-400 text-center">
             Zona horaria configurada: América/Bogotá (GMT-5)
