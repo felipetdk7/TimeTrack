@@ -211,3 +211,19 @@ Para equipos que requieran sincronización remota multiusuario en tiempo real:
    - Configurar un Cloudflare Worker Cron Trigger o Cloud Function para sincronizar eventos de Calendar mediante Service Accounts o refresh tokens guardados de forma segura.
 3. **Despliegue en Cloudflare Workers**:
    - Como la aplicación es una SPA compilada por Vite, puede desplegarse directamente con **Cloudflare Workers Static Assets** (`dist/`) o **Cloudflare Pages**.
+
+---
+
+## How we build
+
+Delivery is **spec-driven** and phased (see [docs/roadmap.md](./docs/roadmap.md)).
+
+| Path | Purpose |
+|------|---------|
+| [docs/specs/](./docs/specs/README.md) | Per-change specs (stories, AC, test mapping) |
+| [docs/decisions/](./docs/decisions/README.md) | ADRs (architecture choices) |
+| [docs/spec-driven-development.md](./docs/spec-driven-development.md) | Workflow and templates |
+| [AGENTS.md](./AGENTS.md) | Agent commands and **spec-first** rule |
+| [.github/pull_request_template.md](./.github/pull_request_template.md) | PR checklist (spec link, invariants) |
+
+Before implementing a feature: read or write the matching `SPEC-NNN` file; after merge, set `status: implemented` when acceptance criteria are verified.
