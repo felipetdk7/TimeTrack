@@ -4,6 +4,11 @@ import {
   fetchGoogleCalendarEvents,
   GoogleAuthExpiredError,
 } from '../services/googleWorkspace';
+import {
+  hasOverlappingEntry as entriesOverlap,
+  isEntryDateLocked,
+  matchCalendarEventList,
+} from './storeRules';
 
 export interface User {
   id: string;
@@ -434,42 +439,22 @@ export const useTimeTrackStore = () => {
     saveUsers(users.filter((u) => u.id !== userId));
   };
 
-  // Calculate if entry date is locked (using America/Bogota today)
-  const isEntryLocked = (dateStr: string): boolean => {
-    if (!settings.lockDays || activeUser?.role === 'Admin') return false;
-    const todayBogota = getBogotaDateString(0);
-    const todayDate = new Date(todayBogota + 'T00:00:00Z');
-    const entryDate = new Date(dateStr + 'T00:00:00Z');
-    const diffDays = Math.floor(
-      (todayDate.getTime() - entryDate.getTime()) / (1000 * 60 * 60 * 24)
+  const isEntryLocked = (dateStr: string): boolean =>
+    isEntryDateLocked(
+      dateStr,
+      settings.lockDays,
+      activeUser?.role,
+      getBogotaDateString(0)
     );
-    return diffDays > settings.lockDays;
-  };
 
-  // Check for overlapping entries
   const hasOverlappingEntry = (
     userId: string,
     date: string,
     startTime: string,
     endTime: string,
     excludeId?: string
-  ): boolean => {
-    const toMinutes = (time: string) => {
-      const [h, m] = time.split(':').map(Number);
-      return h * 60 + m;
-    };
-
-    const newStart = toMinutes(startTime);
-    const newEnd = toMinutes(endTime);
-
-    return entries.some((entry) => {
-      if (entry.userId !== userId || entry.date !== date || entry.id === excludeId)
-        return false;
-      const existingStart = toMinutes(entry.startTime);
-      const existingEnd = toMinutes(entry.endTime);
-      return newStart < existingEnd && newEnd > existingStart;
-    });
-  };
+  ): boolean =>
+    entriesOverlap(entries, userId, date, startTime, endTime, excludeId);
 
   // Timer actions
   const startTimer = (taskId: string) => {
@@ -698,64 +683,7 @@ export const useTimeTrackStore = () => {
     return { success: true };
   };
 
-  // Match "[Project Name] Task Name" against current projects & tasks
-  const matchEventList = useCallback(
-    (
-      eventsList: CalendarEvent[],
-      currentProjects: Project[],
-      currentTasks: Task[],
-      currentEntries: TimeEntry[],
-      currentDiscarded: string[]
-    ): CalendarEvent[] => {
-      const loggedCalIds = new Set(
-        currentEntries
-          .map((e) => e.calendarEventId)
-          .filter((id): id is string => Boolean(id))
-      );
-      const discardedSet = new Set(currentDiscarded);
-
-      return eventsList.map((evt) => {
-        let matchedProjectId: string | undefined;
-        let matchedTaskId: string | undefined;
-
-        const match = evt.title.match(/^\[([^\]]+)\]\s*(.+)$/);
-        if (match) {
-          const projName = match[1].trim().toLowerCase();
-          const taskName = match[2].trim().toLowerCase();
-
-          const matchedProj = currentProjects.find(
-            (p) => p.name.toLowerCase() === projName
-          );
-          if (matchedProj) {
-            matchedProjectId = matchedProj.id;
-            const matchedTask = currentTasks.find(
-              (t) =>
-                t.projectId === matchedProj.id &&
-                t.name.toLowerCase() === taskName
-            );
-            matchedTaskId = matchedTask?.id;
-          }
-        }
-
-        let status: 'pending' | 'confirmed' | 'discarded' = evt.status;
-        if (loggedCalIds.has(evt.id)) {
-          status = 'confirmed';
-        } else if (discardedSet.has(evt.id)) {
-          status = 'discarded';
-        } else {
-          status = 'pending';
-        }
-
-        return {
-          ...evt,
-          matchedProjectId,
-          matchedTaskId,
-          status,
-        };
-      });
-    },
-    []
-  );
+  const matchEventList = useCallback(matchCalendarEventList, []);
 
   // Re-evaluate auto-matching whenever projects, tasks, or entries change
   useEffect(() => {
@@ -773,7 +701,7 @@ export const useTimeTrackStore = () => {
         saveCalendarEvents(rematched);
       }
     }
-  }, [projects, tasks, entries, discardedCalIds]);
+  }, [calendarEvents, projects, tasks, entries, discardedCalIds, matchEventList]);
 
   // Real Google Calendar Sync (also auto-extracts [Proyecto] Tarea into Tasks when project exists)
   const syncGoogleCalendar = useCallback(

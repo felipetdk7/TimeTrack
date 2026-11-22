@@ -11,7 +11,8 @@ Welcome to **TimeTrack**. This file provides quick instructions and operating ru
 
 ## Quick Commands
 - **Install dependencies:** `npm install --legacy-peer-deps`
-- **Typecheck & Lint:** `npm run lint` (`tsc --noEmit`)
+- **Lint (tests + ESLint + types):** `npm run lint` (`vitest run`, `eslint .`, `tsc --noEmit`)
+- **Unit tests:** `npm run test`
 - **Build Production:** `npm run build`
 - **Development Server:** `npm run dev` (Port 3000, host `0.0.0.0`)
 

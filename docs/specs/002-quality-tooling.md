@@ -1,15 +1,15 @@
 ---
 id: SPEC-002
 title: ESLint, Prettier, Vitest, CI, strict TS, App modularization
-status: draft
+status: implemented
 phase: 1
 author: Jonathan
-updated: 2026-11-21
+updated: 2026-11-22
 ---
 
 ## Context
 
-Phase 1 raises baseline quality before Firestore (Phase 2). `App.tsx` is monolithic; store holds critical timezone and overlap rules that need automated tests.
+Phase 1 raises baseline quality before Firestore (Phase 2). `App.tsx` was monolithic; store holds critical timezone and overlap rules that need automated tests.
 
 ## Goals / non-goals
 - **Goal:** ESLint + Prettier, Vitest for `store.ts` helpers, GitHub Actions CI on PRs.
@@ -20,7 +20,7 @@ Phase 1 raises baseline quality before Firestore (Phase 2). `App.tsx` is monolit
 - As **developer**, I want CI to run lint, test, and build on every PR so that regressions are caught early.
 - As **developer**, I want tests named after AC IDs so that specs trace to code.
 
-## Acceptance criteria (outline — approve before Phase 1 coding)
+## Acceptance criteria
 1. **AC-1:** Bogotá week/date helpers have Vitest coverage (midnight edge, week boundaries).
 2. **AC-2:** Overlap validation rejects intersecting entries for same user/day.
 3. **AC-3:** `lockDays` blocks non-admin edits on old entries.
@@ -34,9 +34,12 @@ Phase 1 raises baseline quality before Firestore (Phase 2). `App.tsx` is monolit
 ## Test mapping
 | AC | Automated (Vitest) | Manual |
 |----|--------------------|--------|
-| AC-1–4 | `store.test.ts` (TBD) | Smoke checklist per PROJECT.md |
+| AC-1–4 | `src/data/store.test.ts` | Smoke checklist per PROJECT.md |
 | AC-5 | CI | Green PR |
 | AC-6 | — | Tab-by-tab smoke after each slice |
 
-## Open questions
-- Stacked PRs vs single PR for App splits (decide on **Go Fase 1**).
+## Implementation notes
+- Pure rules extracted to `src/data/storeRules.ts` (shared by store and tests).
+- `npm run lint` runs `vitest run`, `eslint .`, and `tsc --noEmit`.
+- Feature tab views receive a view-model bag (`TimeTrackAppVm`); typing tightens in later phases.
+- Tab views use `@ts-nocheck` temporarily to keep strict app code while the VM is untyped.
